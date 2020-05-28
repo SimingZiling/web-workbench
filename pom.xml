@@ -8,10 +8,18 @@
     <artifactId>web-workbench</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
     <modules>
         <module>web-workbench-netty</module>
         <module>web-workbench-web</module>
         <module>web-workbench-cache</module>
+        <module>web-workbench-bean</module>
+        <module>web-workbench-example</module>
     </modules>
 
 
