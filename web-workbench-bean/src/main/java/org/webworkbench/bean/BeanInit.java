@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -142,122 +140,126 @@ public class BeanInit {
         }
     }
 
-//    /**
-//     * 包扫描
-//     * @param pack
-//     */
-//    public static void scanPackage(String pack){
-//        System.out.println(pack);
-//        // 通过正则获取带星号的包的前缀贺后缀
-//        Pattern p = Pattern.compile("(.*?)\\.\\*(.*)");
-//        Matcher m = p.matcher(pack);
-//        if (m.find()) {
-//            System.out.println("前缀："+m.group(1));
-//            System.out.println("后缀："+m.group(2));
-//            // 获取包的名字 并进行替换
-//            String packageDirName = m.group(1).replace('.', '/');
-//            System.out.println(packageDirName);
-//            // 定义一个枚举的集合 并进行循环来处理这个目录下的things
-//            Enumeration<URL> dirs;
-//            try {
-//                dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);
-//                // 循环迭代下去
-//                while (dirs.hasMoreElements()){
-//                    // 获取下一个元素
-//                    URL url = dirs.nextElement();
-//                    // 得到协议的名称
-//                    String protocol = url.getProtocol();
-//                    // 如果是以文件的形式保存在服务器上
-//                    if ("file".equals(protocol)){
-////                        System.err.println("文件形式！");
-//                        // 获取包的物理路径
-//                        String filePath = URLDecoder.decode(url.getFile(), "UTF-8");
-//                        // 获取此包的目录 建立一个File
-//                        File dir = new File(filePath);
-//                        // 如果不存在或者 也不是目录就直接返回
-//                        if (!dir.exists() || !dir.isDirectory()) {
-//                            return;
-//                        }
-//                        // 如果存在 就获取包下的所有文件 包括目录
-//                        File[] dirfiles = dir.listFiles(new FileFilter() {
-//                            // 自定义过滤规则 如果可以循环(包含子目录) 或则是以.class结尾的文件(编译好的java类文件)
-//                            public boolean accept(File file) {
-//                                return (file.isDirectory());
-//                            }
-//                        });
-////                        System.err.println(filePath);
-//                        for (File file : dirfiles){
-////                            System.err.println(m.group(1)+"."+file.getName()+m.group(2));
-//                            scanPackage(m.group(1)+"."+file.getName()+m.group(2));
-//                        }
-//
-//                    }
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }else {
-//            if(!m.find()) {
-//                System.out.println("有效地址" + pack);
-//            }
-//        }
-//    }
+    private boolean iteration = false;
 
-    /**
-     * 扫描包
-     * @param packPath 包路径
-     */
-    public static void scanPackage(String packPath){
+    public Set<String> scanPackage(String packPath,Set<String> packageSet){
+        if(packageSet == null){
+            packageSet = new LinkedHashSet<String>();
+        }
         // 通过正则获取带星号的包的前缀贺后缀
         Matcher matcher = Pattern.compile("(.*?)\\.\\*(.*)").matcher(packPath);
         if (matcher.matches()) {
-//            System.out.println("前缀："+matcher.group(1));
-//            System.out.println("后缀："+matcher.group(2));
-            // 获取包的名字 并进行替换
-            String packageDirName = matcher.group(1).replace('.', '/');
-//            System.out.println(packageDirName);
-            // 定义一个枚举的集合 并进行循环来处理这个目录下的things
-//            Enumeration<URL> dirs;
-            try {
-                // 定义一个枚举的集合 并进行循环来处理这个目录下的things
-                Enumeration<URL> dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);
-                // 迭代包路径
-                while (dirs.hasMoreElements()) {
-                    // 获取下一个元素
-                    URL url = dirs.nextElement();
-                    // 得到协议的名称
-                    String protocol = url.getProtocol();
-                    if("file".equals(protocol)){
-                        // 获取包的物理路径
-                        String filePath = URLDecoder.decode(url.getFile(), "UTF-8");
-                        // 获取此包的目录 建立一个File
-                        File dir = new File(filePath);
-                        // 如果不存在或者 也不是目录就直接返回
-                        if (!dir.exists() || !dir.isDirectory()) {
-                            return;
-                        }
-                        // 如果存在 就获取包下的所有文件 包括目录
-                        File[] dirfiles = dir.listFiles(new FileFilter() {
-                            // 自定义过滤规则 如果可以循环(包含子目录) 或则是以.class结尾的文件(编译好的java类文件)
-                            public boolean accept(File file) {
-                                return (file.isDirectory());
-                            }
-                        });
-                        // 遍历包中的目录文件
-                        for (File file : dirfiles){
-                            // 将后缀添加
-                            scanPackage(matcher.group(1)+"."+file.getName()+matcher.group(2));
-                        }
-                    }else if("jar".equals(protocol)){
-                        System.out.println("jar文件");
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            // 当星号后的值为空的时候则进行迭代
+            if (matcher.group(2) == null || matcher.group(2).equals("")){
+                iteration = true;
+            }
+            for(String fileName : getPackageFile(matcher.group(1),false)){
+                scanPackage(matcher.group(1)+"."+fileName+matcher.group(2),packageSet);
             }
         }else {
-            System.out.println("不带星号，直接获取文件:"+packPath);
+            if(getPackageFile(packPath,true).size() !=0){
+                packageSet.add(packPath);
+            }
         }
+        if(iteration){
+            for(String fileName : getPackageFile(packPath,false)){
+                scanPackage(packPath+"."+fileName,packageSet);
+            }
+        }
+        return packageSet;
+    }
+
+    /**
+     * 获取包路径中文件
+     * @param packPath 包路径
+     * @param type 获取类型 true表示文件 false表示文件夹
+     * @return 有效文件列表（不包含空目录）
+     */
+    public Set<String> getPackageFile(String packPath,Boolean type){
+        Set<String> packageFile = new LinkedHashSet<String>();
+
+        String packName = packPath;
+        String packageDirName = packName.replace('.', '/');
+        try {
+            Enumeration<URL> dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);
+            // 迭代包路径
+            while (dirs.hasMoreElements()) {
+                // 获取下一个元素
+                URL url = dirs.nextElement();
+                // 得到协议的名称
+                String protocol = url.getProtocol();
+                if("file".equals(protocol)){
+                    // 获取包的物理路径
+                    String filePath = URLDecoder.decode(url.getFile(), "UTF-8");
+                    // 获取此包的目录 建立一个File
+                    File dir = new File(filePath);
+                    // 如果不存在或者文件不是目录
+                    if(!dir.exists() || !dir.isDirectory()){
+                        break;
+                    }
+                    // 获取目录中文件列表
+                    File[] dirfiles = dir.listFiles();
+                    if (dirfiles == null || dirfiles.length <= 0){
+                        break;
+                    }
+                    for (File file : dirfiles){
+                        if(type == null){
+                            packageFile.add(file.getName());
+                        }else if (type){
+                            if (!file.isDirectory()) {
+                                packageFile.add(file.getName());
+                            }
+                        }else {
+                            if (file.isDirectory()) {
+                                packageFile.add(file.getName());
+                            }
+                        }
+                    }
+                }else if ("jar".equals(protocol)){
+                    // 从此jar包 得到一个枚举类
+                    Enumeration<JarEntry> entries = ((JarURLConnection) url.openConnection()).getJarFile().entries();
+                    // 同样的进行循环迭代
+                    while (entries.hasMoreElements()){
+                        // 获取jar里的一个实体 可以是目录 和一些jar包里的其他文件 如META-INF等文件
+                        JarEntry entry = entries.nextElement();
+                        String name = entry.getName();
+                        // 如果是以/开头的
+                        if (name.charAt(0) == '/') {
+                            // 获取后面的字符串
+                            name = name.substring(1);
+                        }
+                        if(type == null){
+
+                        }else if(type){
+                            if (!entry.isDirectory()){
+                                if (name.startsWith(packageDirName)) {
+                                    Matcher matcher = Pattern.compile(packageDirName + ".*?/(.*?)").matcher(name);
+                                    if (matcher.matches()) {
+                                        Matcher fileMatcher = Pattern.compile("/").matcher(matcher.group(1));
+                                        if(!fileMatcher.find()){
+                                            packageFile.add(matcher.group(1));
+                                        }
+                                    }
+                                }
+                            }
+                        }else {
+                            if (entry.isDirectory()) {
+                                // 如果前半部分和定义的包名相同
+                                if (name.startsWith(packageDirName)) {
+                                    Matcher matcher = Pattern.compile(packageDirName + "/(.*?)/.*").matcher(name);
+                                    if (matcher.matches()) {
+                                        packageFile.add(matcher.group(1));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return packageFile;
     }
 
 }
