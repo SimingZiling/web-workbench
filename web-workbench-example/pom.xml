@@ -16,6 +16,7 @@
         <module>web-workbench-example-controller</module>
         <module>web-workbench-example-dao</module>
         <module>web-workbench-example-webapp</module>
+        <module>web-workbench-example-service</module>
     </modules>
 
 

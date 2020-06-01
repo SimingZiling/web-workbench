@@ -20,7 +20,18 @@
         <module>web-workbench-cache</module>
         <module>web-workbench-bean</module>
         <module>web-workbench-example</module>
+        <module>web-workbench-core</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <artifactId>local-tools</artifactId>
+                <groupId>org.yiming</groupId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 
 </project>
